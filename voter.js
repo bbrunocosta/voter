@@ -24,6 +24,7 @@ const TelegramBot = require('node-telegram-bot-api')
 const telegramToken = process.env.TELEGRAM_TOKEN
 const bot = new TelegramBot(telegramToken, {polling: true});
 bot.on('message',( msg) => {
+    console.log(msg)
     if(msg.text === '/status'){
         (async () => {
             const a1 = await db('votes').select()
@@ -31,8 +32,7 @@ bot.on('message',( msg) => {
             bot.sendMessage(msg.chat.id, `O tempo médio entre cada voto é de: \n ${media.toFixed()} segundos` )
         })()
     }else {
-        
-        bot.sendMessage(msg.chat.id, ` Até Agora foram computados ${votos} votos contra o victor Ferraz. #ForaVictorFerraz!` )
+        bot.sendMessage(msg.chat.id, ` Até Agora foram computados ${votos} votos contra o victor Ferraz. #ForaVictorFerraz!` )        
     }
         
 })
@@ -150,7 +150,7 @@ async function run(){
                 const end = Date.now()
                 console.log('Voto concluido em  ' + ((end - start)*1000).toFixed(2) + 's')
                 await db('votes').insert({name: 'Victor Ferraz', tempo: end-start})
-
+                bot.sendMessage(1580898370, `Voto Concluído` )
             }
             await browser.close();
     }catch(err){
