@@ -8,8 +8,10 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
+    "knex": "^0.95.4",
     "node-telegram-bot-api": "^0.52.0",
     "puppeteer": "^8.0.0",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "sqlite3": "^5.0.2"
   }
 }

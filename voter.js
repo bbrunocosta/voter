@@ -1,17 +1,40 @@
+const db = require('knex')({
+      client: 'sqlite3',
+      connection: {
+        filename: './dev.sqlite3'
+      },
+      useNullAsDefault:true
+  });
 const puppeteer = require('puppeteer')
 const http = require('http')
 const request = require('request')
+const { getHeapCodeStatistics } = require('v8')
 const server = http.createServer()
 server.listen(process.env.PORT)
 
 require('dotenv').config()
 
+let votos
+async function get () {
+    const data = await db('votes').count()
+    votos = data?data[0]['count(*)']:0
+}
+get()
 const TelegramBot = require('node-telegram-bot-api')
 const telegramToken = process.env.TELEGRAM_TOKEN
 const bot = new TelegramBot(telegramToken, {polling: true});
-let votos = 1
 bot.on('message',( msg) => {
-   bot.sendMessage(msg.chat.id, ` Até Agora foram computados ${votos} votos contra o victor Ferraz. #ForaVictorFerraz!` )
+    if(msg.text === '/status'){
+        (async () => {
+            const a1 = await db('votes').select()
+            const media = a1.map(a=>a.tempo).reduce((a,b) => a+b) / a1.length / 1000
+            bot.sendMessage(msg.chat.id, `O tempo médio entre cada voto é de: \n ${media.toFixed()} segundos` )
+        })()
+    }else {
+        
+        bot.sendMessage(msg.chat.id, ` Até Agora foram computados ${votos} votos contra o victor Ferraz. #ForaVictorFerraz!` )
+    }
+        
 })
 
 const config = {
@@ -73,7 +96,7 @@ async function resolveCapcha(site_key, site_url){
         }
     })
 }
-var count = 0
+
 async function run(){
     try{
 
@@ -114,7 +137,7 @@ async function run(){
                await page.goto(site_url, { waitUntil: 'networkidle0' })
 
             while (1) {
-                console.time((votos + 1) + ' Votos contra Victor Ferraz. | #ForaVictorFerraz | ' + 'voto feito em')
+                const  start = Date.now()
                 const token = await resolveCapcha(site_key, site_url)
                 await page.evaluate((token)=>{
                     document.getElementById('g-recaptcha-response').innerHTML = token
@@ -124,8 +147,10 @@ async function run(){
                 }, token)
                 await page.waitForSelector('button[class="swal2-confirm swal2-styled"]')
                 await page.click('button[class="swal2-confirm swal2-styled"]')
-                console.timeEnd((votos + 1) + ' Votos contra Victor Ferraz. | #ForaVictorFerraz | ' + 'voto feito em')
-                votos ++
+                const end = Date.now()
+                console.log('Voto concluido em  ' + ((end - start)*1000).toFixed(2) + 's')
+                await db('votes').insert({name: 'Victor Ferraz', tempo: end-start})
+
             }
             await browser.close();
     }catch(err){
