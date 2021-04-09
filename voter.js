@@ -24,8 +24,7 @@ const TelegramBot = require('node-telegram-bot-api')
 const telegramToken = process.env.TELEGRAM_TOKEN
 const bot = new TelegramBot(telegramToken, {polling: true});
 bot.on('message',( msg) => {
-    console.log(msg)
-    if(msg.text === '/status'){
+    if(msg.text === 'status'){
         (async () => {
             const a1 = await db('votes').select()
             const media = a1.map(a=>a.tempo).reduce((a,b) => a+b) / a1.length / 1000
