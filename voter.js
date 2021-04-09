@@ -1,5 +1,9 @@
 const puppeteer = require('puppeteer')
+const http = require('http')
 const request = require('request')
+const server = http.createServer()
+server.listen(process.env.PORT)
+
 require('dotenv').config()
 
 const TelegramBot = require('node-telegram-bot-api')
@@ -137,3 +141,4 @@ async function run(){
         console.log(err)
     }
 })()
+
