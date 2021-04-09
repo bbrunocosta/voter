@@ -78,7 +78,13 @@ async function run(){
             let site_key = process.env.SITE_KEY
 
 
-            let browser = await puppeteer.launch({headless:true})
+            let browser = await puppeteer.launch({
+                headless:true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                  ],
+            })
             let page = await browser.newPage()
 
             await page.goto(site_login, { waitUntil: 'networkidle0' })
