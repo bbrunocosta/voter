@@ -1,10 +1,13 @@
 const db = require('knex')({
-      client: 'sqlite3',
-      connection: {
-        filename: './dev.sqlite3'
-      },
-      useNullAsDefault:true
-  });
+    client: 'pg',
+    connection: {
+        host: '149.28.102.99',
+        user: 'c218fcb27e54eb15db7af44c2e06755d',
+        password: 'Ip42SfbJ$Z]cA,vL3@',
+        database: '5832ca5e1113e22399748c2549ab3b6c'
+    },
+});
+
 const puppeteer = require('puppeteer')
 const http = require('http')
 const request = require('request')
@@ -14,27 +17,7 @@ server.listen(process.env.PORT)
 
 require('dotenv').config()
 
-let votos
-async function get () {
-    const data = await db('votes').count()
-    votos = data?data[0]['count(*)']:0
-}
-get()
-const TelegramBot = require('node-telegram-bot-api')
-const telegramToken = process.env.TELEGRAM_TOKEN
-const bot = new TelegramBot(telegramToken, {polling: true});
-bot.on('message',( msg) => {
-    if(msg.text === 'status'){
-        (async () => {
-            const a1 = await db('votes').select()
-            const media = a1.map(a=>a.tempo).reduce((a,b) => a+b) / a1.length / 1000
-            bot.sendMessage(msg.chat.id, `O tempo médio entre cada voto é de: \n ${media.toFixed()} segundos` )
-        })()
-    }else {
-        bot.sendMessage(msg.chat.id, ` Até Agora foram computados ${votos} votos contra o victor Ferraz. #ForaVictorFerraz!` )        
-    }
-        
-})
+
 
 const config = {
     api_key: process.env.API_KEY
@@ -98,7 +81,6 @@ async function resolveCapcha(site_key, site_url){
 
 async function run(){
     try{
-
             let site_login = process.env.SITE_LOGIN
             let site_url = process.env.SITE_URL
             let site_key = process.env.SITE_KEY
@@ -111,29 +93,30 @@ async function run(){
                     '--disable-setuid-sandbox',
                   ],
             })
+
+            // await page.goto(site_login, { waitUntil: 'networkidle0' })
+            // await page.$eval('a[href="/idioma.php?lgn=pt&pg=/login"]', (element) => {
+            //     element.click()
+            // })
+            // await page.waitForSelector('input[name=login]')
+
+            // const login = process.env.LOGIN
+            // const password = process.env.PASSWORD
+
+            // await page.$eval('input[name="user"]', (element, login) => {
+            //     element.value = login
+            // }, login)
+            // await page.$eval('input[name="pass"]', (element, password) => {
+            //     element.value = password
+            // }, password)
+
+            // await page.$eval('input[type=submit]', (element) => {
+            //     element.click()
+            // })
+            
             let page = await browser.newPage()
-
-            await page.goto(site_login, { waitUntil: 'networkidle0' })
-            await page.$eval('a[href="/idioma.php?lgn=pt&pg=/login"]', (element) => {
-                element.click()
-            })
-            await page.waitForSelector('input[name=login]')
-
-            const login = process.env.LOGIN
-            const password = process.env.PASSWORD
-
-            await page.$eval('input[name="user"]', (element, login) => {
-                element.value = login
-            }, login)
-            await page.$eval('input[name="pass"]', (element, password) => {
-                element.value = password
-            }, password)
-
-            await page.$eval('input[type=submit]', (element) => {
-                element.click()
-            })
-
-               await page.goto(site_url, { waitUntil: 'networkidle0' })
+            await page.goto(site_url, { waitUntil: 'networkidle0' })
+            await page.waitForSelector('a[class="btn btn-danger btn-small"]')
 
             while (1) {
                 const  start = Date.now()
@@ -141,21 +124,28 @@ async function run(){
                 await page.evaluate((token)=>{
                     document.getElementById('g-recaptcha-response').innerHTML = token
                     document.getElementById('g-recaptcha-response').style.display = ''
-                    document.getElementById('actor33').click()
+                    document.getElementById('actor72').click()
                     document.getElementById('btnVote').click()
                 }, token)
-                await page.waitForSelector('button[class="swal2-confirm swal2-styled"]')
-                await page.click('button[class="swal2-confirm swal2-styled"]')
-                const end = Date.now()
-                console.log('Voto concluido em  ' + ((end - start)*1000).toFixed(2) + 's')
-                await db('votes').insert({name: 'Victor Ferraz', tempo: end-start})
-                bot.sendMessage(1580898370, `Voto Concluído` )
+                await page.waitForSelector('button[class="swal2-cancel swal2-styled"]')
+                const data = await page.$eval('#swal2-content', element => { 
+                    return element.innerHTML
+                })
+
+                if(data.indexOf('sucesso') >= 0){
+                    const end = Date.now()
+                    await db('votes').insert({name: 'Atlas Mosão', tempo: end-start})
+                    console.log('Voto concluido em  ' + ((end - start)*1000).toFixed(2) + 's')
+                }else{
+                    throw new Error('Vote Error')
+                }
+                await page.click('button[class="swal2-cancel swal2-styled"]')
+                
             }
-            await browser.close();
+        await browser.close();
     }catch(err){
       throw (err)
     }
-
 }
 
 (async ()=>{
